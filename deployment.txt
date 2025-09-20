@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lamp-wp
+  labels:
+    app: lamp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lamp
+  template:
+    metadata:
+      labels:
+        app: lamp
+    spec:
+      containers:
+      - name: httpd-php-container
+        image: webdevops/php-apache:alpine-3-php7
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-root-password
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-database
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-user
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-password
+          - name: MYSQL_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-host
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - mountPath: /opt/docker/etc/php/php.ini
+            name: php-config
+          - mountPath: /app/index.php
+            name: php-index
+            subPath: index.php
+          
+      - name: mysql-container
+        image: mysql:5.6
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-root-password
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-database
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-user
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-password
+          - name: MYSQL_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: mysql-host
+        ports:
+        - containerPort: 3306
+      volumes:
+       - name: php-config
+         configMap:
+           name: php-config
+       - name: php-index
+         configMap:
+           name: php-index
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: lamp-service
+spec:
+  type: NodePort 
+  selector:
+    app: lamp
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30008
+
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: lamp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3306
+
+---
+
+<?php
+$dbname = getenv("MYSQL_DATABASE");
+$dbuser = getenv("MYSQL_USER");
+$dbpass = getenv("MYSQL_PASSWORD");
+$dbhost = getenv("MYSQL_HOST");
+
+// Connect to MySQL with database
+$connect = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+
+// Check connection
+if (!$connect) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
+echo "Connected successfully to database: $dbname<br>";
+
+// Run a simple query
+$test_query = "SHOW TABLES";
+$result = mysqli_query($connect, $test_query);
+
+if ($result) {
+    echo "Tables in database $dbname:<br>";
+    while ($row = mysqli_fetch_row($result)) {
+        echo $row[0] . "<br>";
+    }
+} else {
+    echo "Error executing query: " . mysqli_error($connect);
+}
+
+// Close connection
+mysqli_close($connect);
+?>
+
+
+
+
