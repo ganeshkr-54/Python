@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.flag-background {
+  background: linear-gradient(
+    125deg,
+    rgba(255, 153, 51, 0.19) 0%,
+    rgba(255, 255, 255, 0.11) 33%,
+    rgba(19, 136, 8, 0.2) 66%,
+    rgba(0, 0, 128, 0.13) 100%
+  );
+  background-size: 200% 200%;
+}
+
+.indian-art-border {
+  border-image: linear-gradient(45deg, #ff9933, #fff, #138808) 1;
+}
