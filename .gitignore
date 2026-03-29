@@ -1,0 +1,4 @@
+./FastApi/.venv
+.vscode/
+__py*
+.DS_*
